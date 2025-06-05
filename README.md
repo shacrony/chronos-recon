@@ -10,10 +10,8 @@ O script `recon.sh` cria uma pasta com o nome `recon-DOMINIO-DATA`, contendo tod
 
 ---
 
-## Como usar
 
-
-Pré-requisitos:
+## Pré-requisitos:
 
 ## Você deve ter as seguintes ferramentas instaladas:
 
@@ -42,6 +40,8 @@ Python 3 + takeover.py (fornecido neste repositório)
 Também é necessário definir a variável de ambiente da Chaos API:
 
 export CHAOS_KEY=suachaveaqui
+
+## Como usar
 
 ```bash
 chmod +x recon.sh
