@@ -12,6 +12,38 @@ O script `recon.sh` cria uma pasta com o nome `recon-DOMINIO-DATA`, contendo tod
 
 ## Como usar
 
+
+Pré-requisitos:
+
+## Você deve ter as seguintes ferramentas instaladas:
+
+sublist3r
+
+subfinder
+
+chaos
+
+httpx-toolkit
+
+nuclei
+
+katana
+
+gf
+
+dirsearch
+
+waybackurls
+
+GitDorker
+
+Python 3 + takeover.py (fornecido neste repositório)
+
+Também é necessário definir a variável de ambiente da Chaos API:
+
+export CHAOS_KEY=suachaveaqui
+
 ```bash
 chmod +x recon.sh
 ./recon.sh exemplo.com
+
