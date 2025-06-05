@@ -33,7 +33,7 @@ if [ -z "$CHAOS_KEY" ]; then
 fi
 
 # ─── CHECK: FERRAMENTAS ──────────────────────────────────
-for tool in subfinder sublist3r chaos httpx-toolkit dirsearch katana nuclei gf waybackurls python3; do
+for tool in subfinder sublist3r chaos httpx-toolkit feroxbuster katana nuclei gf waybackurls python3; do
   if ! command -v "$tool" &> /dev/null; then
     echo -e "[!] Ferramenta não encontrada: $tool"
     MISSING=true
@@ -65,15 +65,31 @@ echo "[3] Verificando ativos com httpx..."
 cat subuniq.txt | httpx-toolkit -silent > subdomainlive.txt
 cat subdomainlive.txt | wc -l
 
-# ─── 5. GITDORKER ─────────────────────────────────────────
-echo "[4] Rodando GitDorker..."
-python3 GitDorker.py -d Dorks/medium_dorks.txt -tf tokens.txt -q "$DOMINIO" -lb
+# ─── 5. GitDorker (modo automático) ───────────────────────
+echo -e "\n\033[1;34m[4] Executando GitDorker com token global...\033[0m"
+
+GITDORKER_PATH="/home/kali/Downloads/GitDorker"
+DORKS_FILE="$GITDORKER_PATH/Dorks/medium_dorks.txt"
+TOKENS_FILE="$GITDORKER_PATH/tokens.txt"
+OUTPUT_FILE="gitdorker_$DOMINIO.txt"
+
+if [ -f "$TOKENS_FILE" ] && [ -f "$DORKS_FILE" ]; then
+  python3 "$GITDORKER_PATH/GitDorker.py" \
+          -d "$DORKS_FILE" \
+          -tf "$TOKENS_FILE" \
+          -q "$DOMINIO" -lb \
+          -o "$OUTPUT_FILE"
+  echo -e "\033[1;32m[✔] GitDorker finalizado. Resultados em: $OUTPUT_FILE\033[0m"
+else
+  echo -e "\033[1;31m[!] GitDorker não executado.\033[0m"
+  [ ! -f "$TOKENS_FILE" ] && echo "    ✘ tokens.txt não encontrado em: $TOKENS_FILE"
+  [ ! -f "$DORKS_FILE" ] && echo "    ✘ Dorks file não encontrado em: $DORKS_FILE"
+fi
 
 # ─── 6. KATANA + COLETA DE JS E URLS ──────────────────────
 echo "[5] Coletando JS e URLs via Katana..."
 katana -list subuniq.txt -jc -silent | grep ".js$" | sort -u > js.txt
-katana -u subdomainlive.txt -d 5 -ps waybackarchive,commoncrawl,alienvault \
-  -jc -fx -ef woff,css,png,svg,mp3,woff2,jpeg,gif,svg -silent -o allurls.txt
+katana -u subdomainlive.txt -d 5 -ps waybackarchive,commoncrawl,alienvault -jc -fx -ef woff,css,png,svg,mp3,woff2,jpeg,gif,svg -silent -o allurls.txt
 
 # ─── 7. FILTROS DE ARQUIVOS ──────────────────────────────
 echo "[6] Filtrando arquivos sensíveis..."
@@ -93,10 +109,10 @@ echo "[9] Coletando com Wayback e buscando XSS com GF..."
 waybackurls "$DOMINIO" > wayback.txt
 cat wayback.txt | gf xss > xss-candidates.txt
 
-# ─── 11. DIRSEARCH ─────────────────────────────────────────
-echo "[10] Rodando Dirsearch..."
+# ─── 11. FUZZING COM FEROXBUSTER ─────────────────────────
+echo "[10] Rodando Feroxbuster..."
 while read url; do
-  dirsearch -u "$url" -e php,cgi,htm,html,shtml,shtm,js,txt,bak,zip,old,conf,log,asp,aspx,jsp,sql,db,sqlite,md,tar.gz,7z,rar,json,xml,yaml,yml,ini,java,py,rb,php3,php4,php5 --random-agent --recursive -R 3 -t 20 --exclude-status=404 --follow-redirects --timeout=10 -o "dirsearch-${url//[:\/]/_}.txt"
+  feroxbuster -u "$url" -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 30 -n -q -d 2 -o "feroxbuster-${url//[:\/]/_}.txt"
 done < subdomainlive.txt
 
 echo -e "\n[✔] Recon finalizado! Resultados em: $(pwd)\n"
